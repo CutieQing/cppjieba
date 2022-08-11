@@ -61,6 +61,14 @@ public:
     string LookupTag(const string &str) const {
         return mix_seg_.LookupTag(str);
     }
+
+    bool InsertUserWord(const string& word, const string& tag = UNKNOWN_TAG) {
+        return false;
+    }
+    bool InsertUserWord(const string& word,int freq, const string& tag = UNKNOWN_TAG) {
+        return false;
+    }
+
     bool Find(const string& word) {
         return nullptr != dict_trie_.Find(word);
     }

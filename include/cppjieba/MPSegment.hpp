@@ -72,8 +72,8 @@ private:
 
         for (size_t i = 0; i < dags.size();) {
             const auto next = dags[i].max_next;
-            assert(next > i);
-            assert(next <= dags.size());
+            assert((size_t)next > i);
+            assert((size_t)next <= dags.size());
             WordRange wr(begin + i, begin + next - 1);
             words.push_back(wr);
             i = next;

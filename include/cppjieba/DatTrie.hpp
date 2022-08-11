@@ -90,7 +90,7 @@ public:
         JiebaDAT::result_pair_type find_result;
         dat_.exactMatchSearch(key.c_str(), find_result);
 
-        if ((0 == find_result.length) || (find_result.value < 0) || (find_result.value >= elements_num_)) {
+        if ((0 == find_result.length) || (find_result.value < 0) || (find_result.value >= (int)elements_num_)) {
             return nullptr;
         }
 
@@ -114,7 +114,7 @@ public:
             for (std::size_t idx = 0; idx < num_results; ++idx) {
                 auto & match = result_pairs[idx];
 
-                if ((match.value < 0) || (match.value >= elements_num_)) {
+                if ((match.value < 0) || (match.value >= (int)elements_num_)) {
                     continue;
                 }
 
@@ -220,11 +220,11 @@ private:
             assert(fd >= 0);
             ::fchmod(fd, 0644);
 
-            auto write_bytes = ::write(fd, (const char *)&header, sizeof(header));
+            ssize_t write_bytes = ::write(fd, (const char *)&header, sizeof(header));
             write_bytes += ::write(fd, (const char *)&mem_elem_vec[0], sizeof(mem_elem_vec[0]) * mem_elem_vec.size());
             write_bytes += ::write(fd, dat_.array(), dat_.total_size());
 
-            assert(write_bytes == sizeof(header) + mem_elem_vec.size() * sizeof(mem_elem_vec[0]) + dat_.total_size());
+            assert(write_bytes == (ssize_t) (sizeof(header) + mem_elem_vec.size() * sizeof(mem_elem_vec[0]) + dat_.total_size()));
             ::close(fd);
 
             const auto rename_ret = ::rename(tmp_filepath.c_str(), dat_cache_file.c_str());
