@@ -313,9 +313,16 @@ MD5::MD5() {
 
     unsigned char buffer[1024] ;
 
+#if defined(_WIN32) || defined(_WIN64)
+   errno_t err  = fopen_s(&file, filename, "rb");
+   if (err != 0){
+       return NULL;
+   }
+#else
     if((file = fopen (filename, "rb")) == NULL) {
       return NULL;
     }
+#endif
     int len;
     while( (len = fread( buffer, 1, 1024, file )) )
       Update( buffer, len ) ;

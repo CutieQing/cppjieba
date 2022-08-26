@@ -65,7 +65,11 @@ struct DatMemElem {
 
     void SetTag(const string &str) {
         memset(&tag[0], 0, sizeof(tag));
+#if defined(_WIN32) || defined(_WIN64)
+        strncpy_s(&tag[0], sizeof(tag), str.c_str(), str.size());
+#else
         strncpy(&tag[0], str.c_str(), std::min(str.size(), sizeof(tag) - 1));
+#endif
     }
 
     string GetTag() const { return &tag[0]; }
@@ -281,7 +285,7 @@ class DatTrie {
 
 #if defined(_WIN32) || defined(_WIN64)
         {
-            string sys_tmp_dir(MAX_PATH, '\0'), tmp_file(MAX_PATH);
+            string sys_tmp_dir(MAX_PATH, '\0'), tmp_file(MAX_PATH, '\0');
 
             //  Gets the temp path env string
             auto dwRetVal = GetTempPath(MAX_PATH, &sys_tmp_dir[0]);
@@ -309,7 +313,7 @@ class DatTrie {
 
                 append_write((const char *)&header, sizeof(header));
                 append_write((const char *)&mem_elem_vec[0], sizeof(mem_elem_vec[0]) * mem_elem_vec.size());
-                append_write(dat_.array(), dat_.total_size());
+                append_write((const char *)dat_.array(), dat_.total_size());
 
                 assert(total_bytes ==
                        (DWORD)(sizeof(header) + mem_elem_vec.size() * sizeof(mem_elem_vec[0]) + dat_.total_size()));
