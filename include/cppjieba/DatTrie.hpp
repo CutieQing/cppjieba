@@ -1,20 +1,43 @@
 #pragma once
 
 #include <stdint.h>
-#include <unistd.h>
+#if defined(_WIN32) || defined(_WIN64)
+#    include <shlwapi.h>
+#    include <windows.h>
+#else
+#    include <sys/mman.h>
+#    include <unistd.h>
+#endif
 #include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 #include <algorithm>
 #include <utility>
 
-#include "limonp/Md5.hpp"
 #include "Unicode.hpp"
 #include "darts-clone/include/darts.h"
+#include "limonp/Md5.hpp"
 
 namespace cppjieba {
+
+#if defined(_WIN32) || defined(_WIN64)
+// RAII helpers for HANDLEs
+const auto CloseHandleFunc = [](HANDLE h) { ::CloseHandle(h); };
+typedef std::unique_ptr<void, decltype(CloseHandleFunc)> UniqueCloseHandlePtr;
+
+uint64_t GetFileSize(const std::string &fname, uint64_t *size) {
+    WIN32_FILE_ATTRIBUTE_DATA attrs;
+    if (GetFileAttributesEx(fname.c_str(), GetFileExInfoStandard, &attrs)) {
+        ULARGE_INTEGER file_size;
+        file_size.HighPart = attrs.nFileSizeHigh;
+        file_size.LowPart = attrs.nFileSizeLow;
+        *size = file_size.QuadPart;
+        return 0;
+    }
+    return GetLastError();
+}
+#endif
 
 using std::pair;
 
@@ -23,7 +46,7 @@ struct DatElement {
     string tag;
     double weight = 0;
 
-    bool operator < (const DatElement & b) const {
+    bool operator<(const DatElement &b) const {
         if (word == b.word) {
             return this->weight > b.weight;
         }
@@ -32,7 +55,7 @@ struct DatElement {
     }
 };
 
-inline std::ostream & operator << (std::ostream& os, const DatElement & elem) {
+inline std::ostream &operator<<(std::ostream &os, const DatElement &elem) {
     return os << "word=" << elem.word << "/tag=" << elem.tag << "/weight=" << elem.weight;
 }
 
@@ -40,17 +63,15 @@ struct DatMemElem {
     double weight = 0.0;
     char tag[8] = {};
 
-    void SetTag(const string & str) {
+    void SetTag(const string &str) {
         memset(&tag[0], 0, sizeof(tag));
         strncpy(&tag[0], str.c_str(), std::min(str.size(), sizeof(tag) - 1));
     }
 
-    string GetTag() const {
-        return &tag[0];
-    }
+    string GetTag() const { return &tag[0]; }
 };
 
-inline std::ostream & operator << (std::ostream& os, const DatMemElem & elem) {
+inline std::ostream &operator<<(std::ostream &os, const DatMemElem &elem) {
     return os << "/tag=" << elem.GetTag() << "/weight=" << elem.weight;
 }
 
@@ -62,7 +83,6 @@ struct DatDag {
 
 typedef Darts::DoubleArray JiebaDAT;
 
-
 struct CacheFileHeader {
     char md5_hex[32] = {};
     double min_weight = 0;
@@ -73,20 +93,31 @@ struct CacheFileHeader {
 static_assert(sizeof(DatMemElem) == 16, "DatMemElem length invalid");
 static_assert((sizeof(CacheFileHeader) % sizeof(DatMemElem)) == 0, "DatMemElem CacheFileHeader length equal");
 
-
 class DatTrie {
-public:
+   public:
     DatTrie() {}
     ~DatTrie() {
+#if defined(_WIN32) || defined(_WIN64)
+        BOOL ret = ::UnmapViewOfFile(mmap_addr_);
+        assert(ret);
+
+        ret = ::CloseHandle(mmap_fd_);
+        assert(ret);
+
+        ret = ::CloseHandle(file_fd_);
+        assert(ret);
+#else
+
         ::munmap(mmap_addr_, mmap_length_);
         mmap_addr_ = nullptr;
         mmap_length_ = 0;
 
         ::close(mmap_fd_);
         mmap_fd_ = -1;
+#endif
     }
 
-    const DatMemElem * Find(const string & key) const {
+    const DatMemElem *Find(const string &key) const {
         JiebaDAT::result_pair_type find_result;
         dat_.exactMatchSearch(key.c_str(), find_result);
 
@@ -94,12 +125,11 @@ public:
             return nullptr;
         }
 
-        return &elements_ptr_[ find_result.value ];
+        return &elements_ptr_[find_result.value];
     }
 
-    void Find(RuneStrArray::const_iterator begin, RuneStrArray::const_iterator end,
-              vector<struct DatDag>&res, size_t max_word_len) const {
-
+    void Find(RuneStrArray::const_iterator begin, RuneStrArray::const_iterator end, vector<struct DatDag> &res,
+              size_t max_word_len) const {
         res.clear();
         res.resize(end - begin);
         const string text_str = EncodeRunesToString(begin, end);
@@ -112,7 +142,7 @@ public:
             res[i].nexts.push_back(pair<size_t, const DatMemElem *>(i + 1, nullptr));
 
             for (std::size_t idx = 0; idx < num_results; ++idx) {
-                auto & match = result_pairs[idx];
+                auto &match = result_pairs[idx];
 
                 if ((match.value < 0) || (match.value >= (int)elements_num_)) {
                     continue;
@@ -138,20 +168,54 @@ public:
         }
     }
 
-    double GetMinWeight() const {
-        return min_weight_;
-    }
+    double GetMinWeight() const { return min_weight_; }
 
-    void SetMinWeight(double d) {
-        min_weight_ = d ;
-    }
+    void SetMinWeight(double d) { min_weight_ = d; }
 
-    bool InitBuildDat(vector<DatElement>& elements, const string & dat_cache_file, const string & md5) {
+    bool InitBuildDat(vector<DatElement> &elements, const string &dat_cache_file, const string &md5) {
         BuildDatCache(elements, dat_cache_file, md5);
         return InitAttachDat(dat_cache_file, md5);
     }
 
-    bool InitAttachDat(const string & dat_cache_file, const string & md5) {
+    bool InitAttachDat(const string &dat_cache_file, const string &md5) {
+#if defined(_WIN32) || defined(_WIN64)
+        const static DWORD fileFlags = FILE_ATTRIBUTE_READONLY | FILE_FLAG_RANDOM_ACCESS;
+        HANDLE hFile =
+            CreateFile(dat_cache_file.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                       NULL, OPEN_EXISTING, fileFlags, NULL);
+
+        if (INVALID_HANDLE_VALUE == hFile) {
+            return false;
+        }
+
+        UniqueCloseHandlePtr fileGuard(hFile, CloseHandleFunc);
+
+        uint64_t fileSize;
+        uint64_t s = GetFileSize(dat_cache_file, &fileSize);
+        if ((s != ERROR_SUCCESS) || (fileSize == 0)) {
+            return false;
+        }
+
+        HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+        if (!hMap) {
+            return false;
+        }
+
+        UniqueCloseHandlePtr mapGuard(hMap, CloseHandleFunc);
+        void *ptr = MapViewOfFileEx(hMap, FILE_MAP_READ, 0, 0, static_cast<SIZE_T>(fileSize), NULL);
+
+        if (!ptr) {
+            return false;
+        }
+
+        mmap_fd_ = hMap;
+        file_fd_ = hFile;
+        mapGuard.release();
+        fileGuard.release();
+
+        mmap_addr_ = static_cast<char *>(ptr);
+        mmap_length_ = fileSize;
+#else
         mmap_fd_ = ::open(dat_cache_file.c_str(), O_RDONLY);
 
         if (mmap_fd_ < 0) {
@@ -165,8 +229,9 @@ public:
         mmap_addr_ = reinterpret_cast<char *>(mmap(NULL, mmap_length_, PROT_READ, MAP_SHARED, mmap_fd_, 0));
         assert(MAP_FAILED != mmap_addr_);
 
+#endif
         assert(mmap_length_ >= sizeof(CacheFileHeader));
-        CacheFileHeader & header = *reinterpret_cast<CacheFileHeader*>(mmap_addr_);
+        CacheFileHeader &header = *reinterpret_cast<CacheFileHeader *>(mmap_addr_);
         elements_num_ = header.elements_num;
         min_weight_ = header.min_weight;
         assert(sizeof(header.md5_hex) == md5.size());
@@ -175,18 +240,19 @@ public:
             return false;
         }
 
-        assert(mmap_length_ == sizeof(header) + header.elements_num * sizeof(DatMemElem)  + header.dat_size * dat_.unit_size());
+        assert(mmap_length_ ==
+               sizeof(header) + header.elements_num * sizeof(DatMemElem) + header.dat_size * dat_.unit_size());
         elements_ptr_ = (const DatMemElem *)(mmap_addr_ + sizeof(header));
-        const char * dat_ptr = mmap_addr_ + sizeof(header) + sizeof(DatMemElem) * elements_num_;
+        const char *dat_ptr = mmap_addr_ + sizeof(header) + sizeof(DatMemElem) * elements_num_;
         dat_.set_array(dat_ptr, header.dat_size);
         return true;
     }
 
-private:
-    void BuildDatCache(vector<DatElement>& elements, const string & dat_cache_file, const string & md5) {
+   private:
+    void BuildDatCache(vector<DatElement> &elements, const string &dat_cache_file, const string &md5) {
         std::sort(elements.begin(), elements.end());
 
-        vector<const char*> keys_ptr_vec;
+        vector<const char *> keys_ptr_vec;
         vector<int> values_vec;
         vector<DatMemElem> mem_elem_vec;
 
@@ -203,7 +269,7 @@ private:
             keys_ptr_vec.push_back(elements[i].word.data());
             values_vec.push_back(i);
             mem_elem_vec.push_back(DatMemElem());
-            auto & mem_elem = mem_elem_vec.back();
+            auto &mem_elem = mem_elem_vec.back();
             mem_elem.weight = elements[i].weight;
             mem_elem.SetTag(elements[i].tag);
         }
@@ -213,10 +279,51 @@ private:
         header.elements_num = mem_elem_vec.size();
         header.dat_size = dat_.size();
 
+#if defined(_WIN32) || defined(_WIN64)
+        {
+            string sys_tmp_dir(MAX_PATH, '\0'), tmp_file(MAX_PATH);
+
+            //  Gets the temp path env string
+            auto dwRetVal = GetTempPath(MAX_PATH, &sys_tmp_dir[0]);
+            assert(dwRetVal <= MAX_PATH && (dwRetVal > 0));
+
+            //  Generates a temporary file name.
+            auto uRetVal = GetTempFileName(sys_tmp_dir.c_str(), TEXT("dat_temp"), 0, &tmp_file[0]);
+            assert(uRetVal != 0);
+
+            //  Creates the new file to write to for the upper-case version.
+            HANDLE hTempFile =
+                CreateFile(tmp_file.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            assert(hTempFile != INVALID_HANDLE_VALUE);
+
+            {
+                UniqueCloseHandlePtr fileGuard(hTempFile, CloseHandleFunc);
+                DWORD total_bytes = 0;
+
+                auto append_write = [&total_bytes, &hTempFile](const char *buff, size_t len) {
+                    DWORD dwBytesWritten = 0;
+                    bool succ = WriteFile(hTempFile, buff, len, &dwBytesWritten, NULL);
+                    assert(succ);
+                    total_bytes += dwBytesWritten;
+                };
+
+                append_write((const char *)&header, sizeof(header));
+                append_write((const char *)&mem_elem_vec[0], sizeof(mem_elem_vec[0]) * mem_elem_vec.size());
+                append_write(dat_.array(), dat_.total_size());
+
+                assert(total_bytes ==
+                       (DWORD)(sizeof(header) + mem_elem_vec.size() * sizeof(mem_elem_vec[0]) + dat_.total_size()));
+            }
+
+            bool succ = MoveFileEx(tmp_file.c_str(), dat_cache_file.c_str(),
+                                   MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
+            assert(succ);
+        }
+#else
         {
             string tmp_filepath = string(dat_cache_file) + "_XXXXXX";
             ::umask(S_IWGRP | S_IWOTH);
-            const int fd =::mkstemp(&tmp_filepath[0]);
+            const int fd = ::mkstemp(&tmp_filepath[0]);
             assert(fd >= 0);
             ::fchmod(fd, 0644);
 
@@ -224,55 +331,95 @@ private:
             write_bytes += ::write(fd, (const char *)&mem_elem_vec[0], sizeof(mem_elem_vec[0]) * mem_elem_vec.size());
             write_bytes += ::write(fd, dat_.array(), dat_.total_size());
 
-            assert(write_bytes == (ssize_t) (sizeof(header) + mem_elem_vec.size() * sizeof(mem_elem_vec[0]) + dat_.total_size()));
+            assert(write_bytes ==
+                   (ssize_t)(sizeof(header) + mem_elem_vec.size() * sizeof(mem_elem_vec[0]) + dat_.total_size()));
             ::close(fd);
 
             const auto rename_ret = ::rename(tmp_filepath.c_str(), dat_cache_file.c_str());
             assert(0 == rename_ret);
         }
+#endif
     }
 
     DatTrie(const DatTrie &);
     DatTrie &operator=(const DatTrie &);
 
-private:
+   private:
     JiebaDAT dat_;
-    const DatMemElem * elements_ptr_ = nullptr;
+    const DatMemElem *elements_ptr_ = nullptr;
     size_t elements_num_ = 0;
     double min_weight_ = 0;
 
+#if defined(_WIN32) || defined(_WIN64)
+    HANDLE mmap_fd_;
+    HANDLE file_fd_;
+#else
     int mmap_fd_ = -1;
+#endif
     size_t mmap_length_ = 0;
-    char * mmap_addr_ = nullptr;
+    char *mmap_addr_ = nullptr;
 };
 
-
-inline string CalcFileListMD5(const string & files_list, size_t & file_size_sum) {
+inline string CalcFileListMD5(const string &files_list, size_t &file_size_sum) {
     limonp::MD5 md5;
 
     const auto files = limonp::Split(files_list, "|;");
     file_size_sum = 0;
 
-    for (auto const & local_path : files) {
+    for (auto const &local_path : files) {
+#if defined(_WIN32) || defined(_WIN64)
+        const static DWORD fileFlags = FILE_ATTRIBUTE_READONLY | FILE_FLAG_SEQUENTIAL_SCAN;
+        HANDLE hFile =
+            CreateFile(local_path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                       OPEN_EXISTING, fileFlags, NULL);
+        if (INVALID_HANDLE_VALUE == hFile) {
+            continue;
+        }
+        UniqueCloseHandlePtr fileGuard(hFile, CloseHandleFunc);
+
+        uint64_t len = 0;
+        uint64_t s = GetFileSize(local_path, &len);
+        if ((s != ERROR_SUCCESS) || (len == 0)) {
+            continue;
+        }
+
+        HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+        if (!hMap) {
+            continue;
+        }
+        UniqueCloseHandlePtr mapGuard(hMap, CloseHandleFunc);
+
+        void *addr = MapViewOfFileEx(hMap, FILE_MAP_READ, 0, 0, static_cast<SIZE_T>(len), NULL);
+        if (!addr) {
+            continue;
+        }
+
+        md5.Update((unsigned char *)addr, len);
+        file_size_sum += len;
+
+        BOOL ret = ::UnmapViewOfFile(addr);
+        assert(ret);
+#else
         const int fd = ::open(local_path.c_str(), O_RDONLY);
-        if( fd < 0){
+        if (fd < 0) {
             continue;
         }
         auto const len = ::lseek(fd, 0, SEEK_END);
         if (len > 0) {
-            void * addr = ::mmap(NULL, len, PROT_READ, MAP_SHARED, fd, 0);
+            void *addr = ::mmap(NULL, len, PROT_READ, MAP_SHARED, fd, 0);
             assert(MAP_FAILED != addr);
 
-            md5.Update((unsigned char *) addr, len);
+            md5.Update((unsigned char *)addr, len);
             file_size_sum += len;
 
             ::munmap(addr, len);
         }
         ::close(fd);
+#endif
     }
 
     md5.Final();
     return string(md5.digestChars);
 }
 
-}
+}  // namespace cppjieba

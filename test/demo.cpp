@@ -2,11 +2,17 @@
 
 using namespace std;
 
-const char* const DICT_PATH = "../dict/jieba.dict.utf8";
-const char* const HMM_PATH = "../dict/hmm_model.utf8";
-const char* const USER_DICT_PATH = "../dict/user.dict.utf8";
-const char* const IDF_PATH = "../dict/idf.utf8";
-const char* const STOP_WORD_PATH = "../dict/stop_words.utf8";
+#if defined(_WIN32) || defined(_WIN64)
+#define DIR "..\\dict\\"
+#else
+#define DIR "../dict/"
+#endif
+
+const char* const DICT_PATH = DIR "jieba.dict.utf8";
+const char* const HMM_PATH = DIR "hmm_model.utf8";
+const char* const USER_DICT_PATH = DIR "user.dict.utf8";
+const char* const IDF_PATH = DIR "idf.utf8";
+const char* const STOP_WORD_PATH = DIR "top_words.utf8";
 
 int main(int argc, char** argv) {
   cppjieba::Jieba jieba(DICT_PATH,

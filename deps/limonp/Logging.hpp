@@ -43,7 +43,11 @@ class Logger {
     time_t now;
     time(&now);
     struct tm result;
+#if defined(_WIN32) || defined(_WIN64)
+    localtime_s(&result, &now);
+#else
     localtime_r(&now, &result);
+#endif
     strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &result);
     stream_ << buf
       << " " << filename

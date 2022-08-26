@@ -8,6 +8,10 @@
 #include "limonp/LocalVector.hpp"
 #include "limonp/StringUtil.hpp"
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <ciso646>
+#endif
+
 namespace cppjieba {
 
 using std::string;
