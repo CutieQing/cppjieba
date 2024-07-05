@@ -16,7 +16,7 @@
 #include <utility>
 
 #include "Unicode.hpp"
-#include "darts-clone/include/darts.h"
+#include "darts.h"
 #include "limonp/Md5.hpp"
 
 namespace cppjieba {
