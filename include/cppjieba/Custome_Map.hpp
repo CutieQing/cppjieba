@@ -69,17 +69,17 @@ public:
     _initialed = true;
   }
 
-  int end() { return -1; }
+  int end() const { return -1; }
 
   int find(const string &key) const {
     if (!_initialed)
-      throw runtime_error("Dict not initialed");
+      throw std::runtime_error("Dict not initialed");
 
     double val;
     return dat_.find(key, val);
   }
 
-  double operator[](const string &key) {
+  double operator[](const string &key) const {
     double val;
     if (dat_.find(key, val) != 0)
       throw std::runtime_error("index out of range");
