@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Custome_Map.hpp"
+#include "Custom_Map.hpp"
 #include "MixSegment.hpp"
 #include <cmath>
 #include <set>

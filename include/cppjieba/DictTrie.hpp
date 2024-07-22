@@ -13,7 +13,21 @@
 #include "limonp/Logging.hpp"
 #include "Unicode.hpp"
 #include "DatTrie.hpp"
-
+#include <filesystem>
+#if defined(__APPLE__) && defined(__MACH__)
+    /* Apple OSX and iOS (Darwin). */
+#include <TargetConditionals.h>
+#if TARGET_OS_IPHONE == 1
+    /* iOS */
+inline std::string get_temp_dir(){
+	return getenv("HOME") + "/tmp"
+}
+#endif
+#else
+inline std::string get_temp_dir(){
+	return "/tmp";
+}
+#endif
 namespace cppjieba {
 
 using namespace limonp;
@@ -31,9 +45,9 @@ public:
         WordWeightMax,
     }; // enum UserWordWeightOption
 
-    DictTrie(const string& dict_path, const string& user_dict_paths = "", const string & dat_cache_path = "",
+    DictTrie(const string& dict_path, const string& user_dict_paths = "",
              UserWordWeightOption user_word_weight_opt = WordWeightMedian) {
-        Init(dict_path, user_dict_paths, dat_cache_path, user_word_weight_opt);
+        Init(dict_path, user_dict_paths, user_word_weight_opt);
     }
 
     ~DictTrie() {}
@@ -119,15 +133,12 @@ public:
 
 
 private:
-    void Init(const string& dict_path, const string& user_dict_paths, string dat_cache_path,
+    void Init(const string& dict_path, const string& user_dict_paths,
               UserWordWeightOption user_word_weight_opt) {
         const auto dict_list = dict_path + "|" + user_dict_paths;
         size_t file_size_sum = 0;
         const string md5 = CalcFileListMD5(dict_list, file_size_sum);
-
-        if (dat_cache_path.empty()) {
-            dat_cache_path = dict_path + "." + md5 + "." + to_string(user_word_weight_opt) +  ".dat_cache";
-        }
+				string dat_cache_path = (std::filesystem::path(get_temp_dir()) / std::filesystem::path(dict_path).filename()).string() + "." + md5 + "." + to_string(user_word_weight_opt) +  ".dat_cache";
 
         if (dat_.InitAttachDat(dat_cache_path, md5)) {
             LoadUserDict(user_dict_paths, false); // for load user_dict_single_chinese_word_;

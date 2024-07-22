@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Custome_DatTrie.hpp"
+#include "Custom_DatTrie.hpp"
 #include "Unicode.hpp"
 #include "limonp/Logging.hpp"
 #include "limonp/StringUtil.hpp"
@@ -13,6 +13,21 @@
 #include <map>
 #include <stdint.h>
 #include <string>
+#include <filesystem>
+#if defined(__APPLE__) && defined(__MACH__)
+    /* Apple OSX and iOS (Darwin). */
+#include <TargetConditionals.h>
+#if TARGET_OS_IPHONE == 1
+    /* iOS */
+inline std::string get_temp_dir(){
+	return getenv("HOME") + "/tmp"
+}
+#endif
+#else
+inline std::string get_temp_dir(){
+	return "/tmp";
+}
+#endif
 
 namespace custom {
 
@@ -33,17 +48,12 @@ public:
   DictTrie() {}
 
   ~DictTrie() {}
-  void Init(const string &dict_path, const string &user_dict_paths = "",
-            string dat_cache_path = "",
-            UserWordWeightOption user_word_weight_opt = WordWeightMedian) {
+  void Init(const string &dict_path, const string &user_dict_paths = "", UserWordWeightOption user_word_weight_opt = WordWeightMedian) {
     const auto dict_list = dict_path + "|" + user_dict_paths;
     size_t file_size_sum = 0;
     const string md5 = CalcFileListMD5(dict_list, file_size_sum);
 
-    if (dat_cache_path.empty()) {
-      dat_cache_path = dict_path + "." + md5 + "." +
-                       to_string(user_word_weight_opt) + ".dat_cache";
-    }
+			string dat_cache_path = (std::filesystem::path(get_temp_dir()) / std::filesystem::path(dict_path).filename()).string() + "." + md5 + "." + to_string(user_word_weight_opt) +  ".dat_cache";
 
     if (dat_.InitAttachDat(dat_cache_path, md5)) {
       LoadUserDict(user_dict_paths,
