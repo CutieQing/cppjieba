@@ -7,9 +7,9 @@
 inline std::string get_temp_dir(){
 	return getenv("HOME") + "/tmp"
 }
+#endif
 #else
 inline std::string get_temp_dir(){
 	return "/tmp";
 }
-#endif
 #endif
