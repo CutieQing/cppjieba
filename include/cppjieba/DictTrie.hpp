@@ -13,6 +13,7 @@
 #include "limonp/Logging.hpp"
 #include "Unicode.hpp"
 #include "DatTrie.hpp"
+#include "Utils.hpp"
 namespace cppjieba {
 
 using namespace limonp;

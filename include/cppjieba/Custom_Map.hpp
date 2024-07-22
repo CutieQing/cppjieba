@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Custom_DatTrie.hpp"
+#include "Utils.hpp"
 #include "Unicode.hpp"
 #include "limonp/Logging.hpp"
 #include "limonp/StringUtil.hpp"
@@ -13,7 +14,6 @@
 #include <map>
 #include <stdint.h>
 #include <string>
-#include <Utils.hpp>
 
 namespace custom {
 
