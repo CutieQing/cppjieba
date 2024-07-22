@@ -12,9 +12,8 @@ public:
           const string& model_path,
           const string& user_dict_path,
           const string& idfPath = "",
-          const string& stopWordPath = "",
-          const string& dat_cache_path = "")
-        : dict_trie_(dict_path, user_dict_path, dat_cache_path),
+          const string& stopWordPath = "")
+        : dict_trie_(dict_path, user_dict_path),
           model_(model_path),
           mp_seg_(&dict_trie_),
           hmm_seg_(&model_),
