@@ -7,7 +7,7 @@
 #if TARGET_OS_IPHONE == 1
     /* iOS */
 inline std::string get_temp_dir(){
-	return std::string(getenv("HOME")) + "/tmp"
+	return std::string(getenv("HOME")) + "/tmp";
 }
 #endif
 #else
