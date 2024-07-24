@@ -1,11 +1,12 @@
 #pragma once
 
 #include "limonp/StringUtil.hpp"
+#include "mmap_allocator.h"
 
 namespace cppjieba {
 
 using namespace limonp;
-typedef unordered_map<Rune, double> EmitProbMap;
+typedef mm::unordered_map<Rune, double> EmitProbMap;
 
 struct HMMModel {
     /*
