@@ -1,7 +1,7 @@
 #pragma once
 
 #include "limonp/StringUtil.hpp"
-#include "mmap_allocator.h"
+#include "mmap_allocator.hpp"
 
 namespace cppjieba {
 
