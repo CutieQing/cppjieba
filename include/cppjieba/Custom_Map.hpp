@@ -39,7 +39,7 @@ public:
     size_t file_size_sum = 0;
     const string md5 = CalcFileListMD5(dict_list, file_size_sum);
 
-		string dat_cache_path = (std::filesystem::path(get_temp_dir()) / std::filesystem::path(dict_path).filename()).string() + "." + md5 + "." + to_string(user_word_weight_opt) +  ".dat_cache";
+		string dat_cache_path = _append_path(get_temp_dir(), _get_filename(dict_path)) + "." + md5 + "." + to_string(user_word_weight_opt) +  ".dat_cache";
 
     if (dat_.InitAttachDat(dat_cache_path, md5)) {
       LoadUserDict(user_dict_paths,
