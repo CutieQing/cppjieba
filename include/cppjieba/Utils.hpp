@@ -16,7 +16,7 @@ inline std::string get_temp_dir(){
 	return "/tmp";
 }
 #endif
-std::string _append_path(const std::string &prefix, const std::string &post) {
+inline std::string _append_path(const std::string &prefix, const std::string &post) {
   if (prefix.empty()) {
     return post;
   }
@@ -41,7 +41,7 @@ std::string _append_path(const std::string &prefix, const std::string &post) {
   // 其他情况，直接连接
   return prefix + post;
 }
-std::string _get_filename(const std::string &p) {
+inline std::string _get_filename(const std::string &p) {
   // 找到最后一个斜杠的位置
   std::size_t lastSlashPos = p.find_last_of("/");
   // 如果找到斜杠，则文件名从斜杠之后开始，否则整个路径就是文件名
