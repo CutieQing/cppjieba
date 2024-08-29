@@ -128,12 +128,7 @@ class DatTrie {
         mmap_addr_ = nullptr;
         mmap_length_ = 0;
 
-        if (mmap_fd_ == nullptr) {
-            LOGD("tts demo: mmap fd is nullptr");
-    }
-        else {
-            LOGD("tts demo: mmap fd is [%p]", mmap_fd_);
-        }
+        LOGD("tts demo: mmap fd is [%d]", mmap_fd_);
         ::close(mmap_fd_);
         mmap_fd_ = -1;
 #endif
