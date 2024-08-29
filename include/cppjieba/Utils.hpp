@@ -10,10 +10,10 @@
 inline std::string get_temp_dir(){
 	return std::string(getenv("HOME")) + "/tmp";
 }
-#endif
 #else
 inline std::string get_temp_dir(){
-	return "/tmp";
+	// return "/tmp";
+  return "jar::file:///storage/emulated/0/Android/data/tmp";
 }
 #endif
 inline std::string _append_path(const std::string &prefix, const std::string &post) {
