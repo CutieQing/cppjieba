@@ -19,6 +19,12 @@
 #include "darts.h"
 #include "limonp/Md5.hpp"
 
+#include <android/log.h>
+
+#define LOG_TAG "TTSLog"
+
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+
 namespace cppjieba {
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -111,11 +117,23 @@ class DatTrie {
         ret = ::CloseHandle(file_fd_);
         assert(ret);
 #else
+        if (mmap_addr_ == nullptr) {
+            LOGD("tts demo: mmap address is nullptr");
+        }
+        else {
+            LOGD("tts demo: mmap address is [%p]", mmap_addr_);
+        }
 
         ::munmap(mmap_addr_, mmap_length_);
         mmap_addr_ = nullptr;
         mmap_length_ = 0;
 
+        if (mmap_fd_ == nullptr) {
+            LOGD("tts demo: mmap fd is nullptr");
+    }
+        else {
+            LOGD("tts demo: mmap fd is [%p]", mmap_fd_);
+        }
         ::close(mmap_fd_);
         mmap_fd_ = -1;
 #endif
