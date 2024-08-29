@@ -2,20 +2,30 @@
 
 #include <string>
 #include <cstdlib>
-#if defined(__APPLE__) && defined(__MACH__)
+
+#ifdef __ANDROID__
+  inline std::string get_temp_dir(){
+    return "jar::file:///storage/emulated/0/Android/data/tmp";
+  }
+#elif defined(__APPLE__) && defined(__MACH__)
     /* Apple OSX and iOS (Darwin). */
-#include <TargetConditionals.h>
-#if TARGET_OS_IPHONE == 1
-    /* iOS */
-inline std::string get_temp_dir(){
-	return std::string(getenv("HOME")) + "/tmp";
-}
+  #include <TargetConditionals.h>
+  #if TARGET_OS_IPHONE == 1
+      /* iOS */
+    inline std::string get_temp_dir(){
+      return std::string(getenv("HOME")) + "/tmp";
+    }
+  #else
+    inline std::string get_temp_dir(){
+      return "/tmp";
+    }
+  #endif
 #else
-inline std::string get_temp_dir(){
-	// return "/tmp";
-  return "jar::file:///storage/emulated/0/Android/data/tmp";
-}
+    inline std::string get_temp_dir(){
+      return "/tmp";
+    }
 #endif
+
 inline std::string _append_path(const std::string &prefix, const std::string &post) {
   if (prefix.empty()) {
     return post;
