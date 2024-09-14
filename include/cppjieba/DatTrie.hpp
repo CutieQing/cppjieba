@@ -101,6 +101,7 @@ class DatTrie {
    public:
     DatTrie() {}
     ~DatTrie() {
+#if defined(_WIN32) || defined(_WIN64)
         BOOL ret = ::UnmapViewOfFile(mmap_addr_);
         assert(ret);
 
@@ -110,11 +111,10 @@ class DatTrie {
         ret = ::CloseHandle(file_fd_);
         assert(ret);
 #else
-
         ::munmap(mmap_addr_, mmap_length_);
         mmap_addr_ = nullptr;
         mmap_length_ = 0;
-        
+
         ::close(mmap_fd_);
         mmap_fd_ = -1;
 #endif
