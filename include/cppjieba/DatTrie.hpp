@@ -101,38 +101,20 @@ class DatTrie {
    public:
     DatTrie() {}
     ~DatTrie() {
-        LOGD("tts demo: run ~DatTrie");
-#if defined(_WIN32) || defined(_WIN64)
-        LOGD("tts demo: defined win32 or win64");
-        if (mmap_addr_ == nullptr) {
-            LOGD("tts demo: mmap address is nullptr");
-        }
-        else {
-            LOGD("tts demo: mmap address is [%p]", mmap_addr_);
-        }
-        
         BOOL ret = ::UnmapViewOfFile(mmap_addr_);
         assert(ret);
 
-        LOGD("tts demo: mmap fd is [%d]", mmap_fd_);
         ret = ::CloseHandle(mmap_fd_);
         assert(ret);
 
         ret = ::CloseHandle(file_fd_);
         assert(ret);
 #else
-        if (mmap_addr_ == nullptr) {
-            LOGD("tts demo: mmap address is nullptr");
-        }
-        else {
-            LOGD("tts demo: mmap address is [%p]", mmap_addr_);
-        }
 
         ::munmap(mmap_addr_, mmap_length_);
         mmap_addr_ = nullptr;
         mmap_length_ = 0;
-
-        LOGD("tts demo: mmap fd is [%d]", mmap_fd_);
+        
         ::close(mmap_fd_);
         mmap_fd_ = -1;
 #endif
