@@ -28,7 +28,7 @@ namespace custom {
 const auto CloseHandleFunc = [](HANDLE h) { ::CloseHandle(h); };
 typedef std::unique_ptr<void, decltype(CloseHandleFunc)> UniqueCloseHandlePtr;
 
-uint64_t GetFileSize(const std::string &fname, uint64_t *size) {
+inline uint64_t GetFileSize(const std::string &fname, uint64_t *size) {
   WIN32_FILE_ATTRIBUTE_DATA attrs;
   if (GetFileAttributesEx(fname.c_str(), GetFileExInfoStandard, &attrs)) {
     ULARGE_INTEGER file_size;
