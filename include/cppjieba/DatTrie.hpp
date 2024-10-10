@@ -18,12 +18,13 @@
 #include "Unicode.hpp"
 #include "darts.h"
 #include "limonp/Md5.hpp"
+#include "limonp/StringUtil.hpp"
 
-#include <android/log.h>
+// #include <android/log.h>
 
-#define LOG_TAG "TTSLog"
+// #define LOG_TAG "TTSLog"
 
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+// #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
 namespace cppjieba {
 
@@ -107,20 +108,20 @@ class DatTrie {
    public:
     DatTrie() {}
     ~DatTrie() {
-        LOGD("tts demo: run ~DatTrie");
+        // LOGD("tts demo: run ~DatTrie");
 #if defined(_WIN32) || defined(_WIN64)
-        LOGD("tts demo: defined win32 or win64");
-        if (mmap_addr_ == nullptr) {
-            LOGD("tts demo: mmap address is nullptr");
-        }
-        else {
-            LOGD("tts demo: mmap address is [%p]", mmap_addr_);
-        }
+        // LOGD("tts demo: defined win32 or win64");
+        // if (mmap_addr_ == nullptr) {
+        //     LOGD("tts demo: mmap address is nullptr");
+        // }
+        // else {
+        //     LOGD("tts demo: mmap address is [%p]", mmap_addr_);
+        // }
         
         BOOL ret = ::UnmapViewOfFile(mmap_addr_);
         assert(ret);
 
-        LOGD("tts demo: mmap fd is [%d]", mmap_fd_);
+        // LOGD("tts demo: mmap fd is [%d]", mmap_fd_);
         ret = ::CloseHandle(mmap_fd_);
         assert(ret);
 
