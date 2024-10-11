@@ -345,6 +345,8 @@ class DatTrie {
 
             bool succ = MoveFileEx(tmp_file.c_str(), dat_cache_file.c_str(),
                                    MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
+            std::cout << "status code: " << succ;
+            std::cout << "old name: " << tmp_file << "; new name: " << dat_cache_file << std::endl; 
             assert(succ);
         }
 #else
