@@ -39,7 +39,11 @@ public:
     size_t file_size_sum = 0;
     const string md5 = CalcFileListMD5(dict_list, file_size_sum);
 
+#if defined(_WIN32) || defined(_WIN64)
+		string dat_cache_path = _get_filename(dict_path) + "." + md5 + "." + to_string(user_word_weight_opt) +  ".dat_cache";
+#else
 		string dat_cache_path = _append_path(get_temp_dir(), _get_filename(dict_path)) + "." + md5 + "." + to_string(user_word_weight_opt) +  ".dat_cache";
+#endif
 
     if (dat_.InitAttachDat(dat_cache_path, md5)) {
       LoadUserDict(user_dict_paths,
