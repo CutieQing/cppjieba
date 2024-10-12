@@ -53,7 +53,11 @@ inline std::string _append_path(const std::string &prefix, const std::string &po
 }
 inline std::string _get_filename(const std::string &p) {
   // 找到最后一个斜杠的位置
+#if defined(_WIN32) || defined(_WIN64)
+  std::size_t lastSlashPos = p.find_last_of("\\");
+#else
   std::size_t lastSlashPos = p.find_last_of("/");
+#endif
   // 如果找到斜杠，则文件名从斜杠之后开始，否则整个路径就是文件名
   if (lastSlashPos != std::string::npos) {
     return p.substr(lastSlashPos + 1);
