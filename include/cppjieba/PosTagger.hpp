@@ -21,6 +21,9 @@ public:
     bool Tag(const string& src, vector<pair<string, string> >& res, const SegmentTagged& segment) const {
         vector<string> CutRes;
         segment.CutToStr(src, CutRes);
+        for(int i = 0; i < CutRes.size(); ++i) {
+            std::cout << Utf8ToGbk(CutRes[i]) << std::endl;
+        }
 
         for (vector<string>::iterator itr = CutRes.begin(); itr != CutRes.end(); ++itr) {
             res.push_back(make_pair(*itr, LookupTag(*itr, segment)));
