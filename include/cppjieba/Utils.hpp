@@ -66,7 +66,7 @@ inline std::string _get_filename(const std::string &p) {
 }
 
 // UTF-8 转 GBK 函数
-std::string Utf8ToGbk(const std::string &utf8_str) {
+inline std::string Utf8ToGbk(const std::string &utf8_str) {
     int len = MultiByteToWideChar(CP_UTF8, 0, utf8_str.c_str(), -1, NULL, 0);
     wchar_t* wstr = new wchar_t[len];
     MultiByteToWideChar(CP_UTF8, 0, utf8_str.c_str(), -1, wstr, len);
