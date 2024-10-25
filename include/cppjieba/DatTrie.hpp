@@ -4,7 +4,14 @@
 #if defined(_WIN32) || defined(_WIN64)
 #    include <shlwapi.h>
 #    include <windows.h>
-#else
+#elif defined(__ANDROID__)
+#    include <android/log.h>
+#    include <sys/mman.h>
+#    include <unistd.h>
+
+#    define LOG_TAG "TTSLog"
+#    define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+else 
 #    include <sys/mman.h>
 #    include <unistd.h>
 #endif
@@ -19,12 +26,6 @@
 #include "darts.h"
 #include "limonp/Md5.hpp"
 #include "limonp/StringUtil.hpp"
-
-// #include <android/log.h>
-
-// #define LOG_TAG "TTSLog"
-
-// #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
 namespace cppjieba {
 
