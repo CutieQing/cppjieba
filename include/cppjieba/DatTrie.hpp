@@ -129,18 +129,18 @@ class DatTrie {
         ret = ::CloseHandle(file_fd_);
         assert(ret);
 #else
-        if (mmap_addr_ == nullptr) {
-            LOGD("tts demo: mmap address is nullptr");
-        }
-        else {
-            LOGD("tts demo: mmap address is [%p]", mmap_addr_);
-        }
+        //if (mmap_addr_ == nullptr) {
+        //    LOGD("tts demo: mmap address is nullptr");
+        //}
+        //else {
+        //    LOGD("tts demo: mmap address is [%p]", mmap_addr_);
+        //}
 
         ::munmap(mmap_addr_, mmap_length_);
         mmap_addr_ = nullptr;
         mmap_length_ = 0;
 
-        LOGD("tts demo: mmap fd is [%d]", mmap_fd_);
+        //LOGD("tts demo: mmap fd is [%d]", mmap_fd_);
         ::close(mmap_fd_);
         mmap_fd_ = -1;
 #endif
