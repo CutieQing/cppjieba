@@ -5,7 +5,7 @@
 
 #ifdef __ANDROID__
   inline std::string get_temp_dir(){
-    return "/storage/emulated/0/Android/data/com.DefaultCompany.ailabdemo/cache/";
+    return "/storage/emulated/0/Android/data";
   }
 #elif defined(__APPLE__) && defined(__MACH__)
     /* Apple OSX and iOS (Darwin). */
